@@ -3,15 +3,6 @@
 
 ## Loading and preprocessing the data
 
-Get the CSV file. Transform to data table. Convert date from "factor" to "Date"
-
-```{r}
-library(data.table)
-act <- read.csv("activity/activity.csv")
-AT <- data.table(act)
-AT[,date:=as.Date(date,format="%Y-%m-%d")]
-```
-
 
 
 ## What is mean total number of steps taken per day?
