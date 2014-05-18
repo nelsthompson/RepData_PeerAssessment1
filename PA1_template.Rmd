@@ -3,27 +3,85 @@
 
 ## Loading and preprocessing the data
 
+Load knitr and ensure code chunks "echo"
+
+```{r stage}
+library(knitr)
+opts_chunk$set(echo=TRUE)
+```
+
 Get the CSV file. Transform to data table. Convert date from "factor" to "Date"
 
-```{r}
+```{r load}
 library(data.table)
-act <- read.csv("activity/activity.csv")
-AT <- data.table(act)
+AT <- fread("activity/activity.csv", sep=",")
 AT[,date:=as.Date(date,format="%Y-%m-%d")]
 ```
 
-
-
 ## What is mean total number of steps taken per day?
 
+Plot a histogram of totals steps per day:
+
+```{r histsteps}
+s <- tapply(AT[,steps],AT[,date],sum,na.rm=T)
+hist(s,main="Histogram of steps per day",xlab="Steps per day")
+```
+
+Give the mean and median steps per day:
+
+```{r averages}
+mean(s)
+median(s)
+```
 
 
 ## What is the average daily activity pattern?
 
+```{r TypicalDay}
+t <- tapply(AT[,steps],AT[,interval],mean,na.rm=T)
+plot(names(t),t,type="l",main = "Average Daily Activity Pattern",xlab="5-minute interval",ylab="steps")
+```
 
+Which interval, on average, contains the highest number of steps?
+
+```{r TypicalInterval}
+names(t[t==max(t)])
+```
 
 ## Imputing missing values
 
+How many values are missing? Impute the missing values and create a dataset including the imputed values where the missing values were.
 
+```{r missing}
+length(AT[is.na(AT$steps),][[1]])
+AT[,intmean:=round(mean(steps,na.rm=T)),by=interval]
+AT[is.na(steps),steps:=intmean]
+```
+
+Plot a histogram and show mean and median values for the dataset with the imputed values. Compare to the values from the original data:
+
+```{r althiststeps}
+s <- tapply(AT[,steps],AT[,date],sum,na.rm=T)
+hist(s,main="Histogram of steps per day including imputed values",xlab="Steps per day")
+mean(s)
+median(s)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r wkdy}
+AT[,wkdy:=weekdays(date)]
+AT[wkdy %in% c("Saturday","Sunday"),daytype:="Weekend"]
+AT[wkdy %in% c("Monday","Tuesday","Wednesday","Thursday","Friday"),daytype:="Weekday"]
+ATwkday <- AT[daytype == "Weekday",]
+ATwkend <- AT[daytype == "Weekend",]
+wdayavgsteps <- tapply(ATwkday[,steps],ATwkday[,interval],mean)
+wendavgsteps <- tapply(ATwkend[,steps],ATwkend[,interval],mean)
+xlabels <- names(wendavgsteps)
+par(mfrow=c(2,1))
+plot(xlabels,wendavgsteps,type="l",main="Weekend",xlab="",ylab="")
+plot(xlabels,wdayavgsteps,type="l",main="Weekday",xlab="Interval",ylab="Avg Steps")
+dev.off()
+```
+
+
